@@ -1,8 +1,7 @@
 function T = func(v)
 %优化目标函数func
     global n
-    global detx
-    global alpha
+    global det_L
     global v0
     V = 1:n;
     V(1) = (v0+v(1))/2;
@@ -11,6 +10,6 @@ function T = func(v)
     end
     T = 0;
     for i=1:n
-        T = T + detx(i)/cos(alpha(i))/V(i);
+        T = T + det_L(i)/V(i);
     end
 end

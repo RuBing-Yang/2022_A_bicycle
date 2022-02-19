@@ -11,7 +11,7 @@ function [ce, ceq] = nonlcon(v)
     global miu
     global K
     global vw
-    global detx
+    global det_L
     global CP
     global v0
     V = 1:n;
@@ -26,11 +26,11 @@ function [ce, ceq] = nonlcon(v)
         WG = M*g*sin(alpha(i));
         WW = K*(V(i)+vw*sin(beta(i))).^2;
         
-        t =  detx(i)/cos(alpha(i))/V(i);
+        t =  det_L(i)/V(i);
         if i==1
-            ce = ce + max(0,(WF+WG+WW)*detx(i)/cos(alpha(i)) + 0.5*M*(v(i).^2) - CP * t);
+            ce = ce + max(0,(WF+WG+WW)*det_L(i)) + 0.5*M*(v(i).^2) - CP * t);
         else
-            ce = ce + max((WF+WG+WW)*detx(i)/cos(alpha(i)) + 0.5*M*(v(i).^2-v(i-1).^2) - CP * t,0);
+            ce = ce + max((WF+WG+WW)*det_L(i)) + 0.5*M*(v(i).^2-v(i-1).^2) - CP * t,0);
         end
     end
     ce = ce - W;
