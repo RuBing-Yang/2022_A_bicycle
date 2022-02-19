@@ -52,11 +52,11 @@ options=optimoptions(@fmincon,'Algorithm','sqp','MaxFunEvals',100000,'MaxIter',1
 [outcome,fval] = fmincon('func',V0,[],[],[],[],zeros(1,n),vlimit,'nonlcon',options);
 %outcome为最终速度序列，fval为目标函数最小值
 subplot(2, 2, 1);
-plot([0,x_L], [v0,outcome])%画图v-x_L
+plot([0,x_L], [v0,outcome])%画图v-x
 axis([0 max(x_L) 0 max(outcome)]);%调整图纸坐标轴范围
 xlabel('x_L/m');
 ylabel('v/m*s-1');
-title('Velocity distribution');
+title('Course cross section');
 grid on;
 P = 1:n;
 for i=1:n
@@ -69,11 +69,11 @@ for i=1:n
     end
 end
 subplot(2, 2, 2);
-plot(x_L, P, 'o')%画图P-x_L
+plot(x_L, P, 'o')%画图P-x
 axis([0 max(x_L) 0 max(P)]);%调整图纸坐标轴范围
 xlabel('x_L/m');
 ylabel('P/W');
-title('Power distribution');
+title('P---x_L');
 grid on;
 x = linspace(0,0,n);
 height = linspace(0,0,n);
@@ -84,7 +84,7 @@ for i=2:n
     height(i) = height(i-1) + det_L(i)*sin(alpha(i));
 end
 subplot(2, 2, 3);
-plot(x, height)%画图height-x
+plot(x, height)%画图P-x
 
 xlabel('x/m');
 ylabel('height/m');

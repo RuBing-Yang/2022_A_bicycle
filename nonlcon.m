@@ -24,13 +24,13 @@ function [ce, ceq] = nonlcon(v)
     for i=1:n
         WF = M*(g*cos(alpha(i))+V(i).^2/rho(i))*miu(i);
         WG = M*g*sin(alpha(i));
-        WW = K*(V(i)+vw*sin(beta(i))).^2;
+        WW = K*(V(i)+vw*cos(beta(i))).^2;
         
         t =  det_L(i)/V(i);
         if i==1
-            ce = ce + max(0,(WF+WG+WW)*det_L(i)) + 0.5*M*(v(i).^2) - CP * t);
+            ce = ce + max(0,(WF+WG+WW)*det_L(i) + 0.5*M*(v(i).^2) - CP * t);
         else
-            ce = ce + max((WF+WG+WW)*det_L(i)) + 0.5*M*(v(i).^2-v(i-1).^2) - CP * t,0);
+            ce = ce + max((WF+WG+WW)*det_L(i) + 0.5*M*(v(i).^2-v(i-1).^2) - CP * t,0);
         end
     end
     ce = ce - W;
