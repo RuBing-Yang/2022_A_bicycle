@@ -21,8 +21,9 @@ global V0     %迭代初始速度数组
 global v0     %初始速度
 global L      %路程总长（斜边）
 global x_L    %采样点             数组
+global x_3d
 
-test_type = 1;
+test_type = 3;
 
 if test_type == 0
     v0 = 0;
@@ -34,68 +35,96 @@ if test_type == 0
     det_L = linspace(1,1,n);%rand(1,n);%
     alpha = linspace(-pi/6,pi/6,n);%rand(1,n);%
     beta = linspace(0,0,n);%rand(1,n);%
-    miu = linspace(0.2,0.2,n);%rand(1,n);%
+    miu = 0.0035*ones(1,n);
     %曲率改大，模拟直道路
     rho = linspace(10000,10000,n);%rand(1,n);%
     r = linspace(10000,10000,n);%rand(1,n);%
     V0 = vmax*rand(1,n);
-else
-    %yrb
-    v0 = 0.1;
+elseif test_type == 1
+    %EXCEL表格
+    v0 = 1;
     beta0 = rand();
     earth();
     beta = beta0-theta;
-    miu = linspace(0.2,0.2,n); 
+    miu = 0.0035*ones(1,n);
     vmax = 50;
-    V0 = vmax*rand(1,n);
+    vlimit = rand(1,n) * vmax;
+    V0 = rand(1,1) * vlimit;
+elseif test_type == 2
+    %长上坡长下坡
+    n = 40;
+    x_L = 1:1000:40000;
+    det_L = 1000*ones(1,n);
+    h = [1:25:500 500:-25:1];
+    x_3d = zeros(n,3);
+    x_3d(:,1) = x_L;
+    x_3d(:,3) = h;
+    v0 = 1;
+    L = 40000;
+    vmax = 20;
+    r = 1000*ones(1,n);
+    rho = 1000*ones(1,n);
+    miu = 0.0035*ones(1,n);
+    alpha = [0.025*ones(20,1), -0.025*ones(20,1)];
+    beta = zeros(1,n);
+else
+    %20小上小下
+    n = 40;
+    x_L = 1:1000:40000;
+    det_L = 1000*ones(1,n);
+    h = zeros(1,n);
+    alpha = zeros(1,n);
+    
+    for i = 1:2:40 %奇数
+        h(i) = 25;
+        alpha(i) = 0.025;
+        h(i+1) = -25; %偶数
+        alpha(i+1) = -0.025;
+    end
+    
+    x_3d = zeros(n,3);
+    x_3d(:,1) = x_L;
+    x_3d(:,3) = h;
+    v0 = 1;
+    L = 40000;
+    vmax = 20;
+    r = 1000*ones(1,n);
+    rho = 1000*ones(1,n);
+    miu = 0.0035*ones(1,n);
+    beta = zeros(1,n);
 end
 
 vw = 0;
 M = 80;
 g = 9.81;
-K = 1;
+K = 0.13;
 W = 12430;
 CP = 435;
 Pm = 1234;
-vmax = 50;
-vlimit = rand(1,n);
 
-for i = 1:n
-    vlimit(i) = vmax;%min(vmax, sqrt(miu(i)*g*r(i)));
-end
-
-options=optimoptions(@fmincon,'Algorithm','interior-point','MaxFunEvals',100000,'MaxIter',10000,'GradObj', 'on');
+options=optimoptions(@fmincon,'Algorithm','sqp','MaxFunEvals',100000,'MaxIter',10000,'GradObj', 'on');
 %优化算法：'active-set' 'interior-point' 'sqp'  'trust-region-reflective'
 %'MaxFunEvals',100000 最大优化迭代次数100000
 %'GradObj', 'on',开启梯度函数
-[outcome,fval] = fmincon('func',V0,[],[],[],[],zeros(1,n),vlimit,'nonlcon',options);
+[P,fval] = fmincon('func_P',CP*rand(n,1),[],[],[],[],zeros(1,n),Pm*ones(n,1),'nonlcon_P',options);
 %outcome为最终速度序列，fval为目标函数最小值
 subplot(2, 2, 1);
-plot([0,x_L], [v0,outcome])%画图v-x_L
-axis([0 max(x_L) 0 max(outcome)]);%调整图纸坐标轴范围
+v = P2v(P);
+plot(x_L, v)%画图v-x_L
 xlabel('x_L/m');
 ylabel('v/m*s-1');
 title('Velocity distribution');
 grid on;
-P = 1:n;
-for i=1:n
-    if i==1
-        avgv = outcome(i)/2;
-        P(i) = M*(outcome(i).^2)/2/det_L(i)+K*((avgv+vw*cos(beta(i))).^2)+M*g*sin(alpha(i))+ (M*g*cos(alpha(i))+avgv.^2*M/rho(i))*miu(i);
-    else 
-        avgv = (outcome(i)+outcome(i-1))/2;
-        P(i) = M*(outcome(i).^2-outcome(i-1).^2)/2/det_L(i)+K*((avgv+vw*cos(beta(i))).^2)+M*g*sin(alpha(i))+ (M*g*cos(alpha(i))+avgv.^2*M/rho(i))*miu(i);
-    end
-end
+
+nonlcon(v)
 subplot(2, 2, 2);
 plot(x_L, P, 'o')%画图P-x_L
-axis([0 max(x_L) 0 max(P)]);%调整图纸坐标轴范围
 xlabel('x_L/m');
 ylabel('P/W');
 title('Power distribution');
 grid on;
 subplot(2, 2, 3);
-global x_3d
+
 plot(x_L,x_3d(:,3))%画图height-x
 xlabel('x/m');
 ylabel('height/m');
