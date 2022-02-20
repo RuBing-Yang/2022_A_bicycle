@@ -1,4 +1,4 @@
-function earth()
+function earth(filename)
     %利用Google Earth数据
     %维度北极90度，南极-90度，经度向东增长0-360度
     %将整个赛道所在地表面近似为地球切面平面，建立XYZ坐标系
@@ -15,7 +15,7 @@ function earth()
     global rho
     global r
     
-    rawdata = xlsread('Tokyo.xlsx');
+    rawdata = xlsread(filename);
     x = zeros(n,1);
     y = zeros(n,1);
     h = zeros(n,1);
@@ -67,7 +67,5 @@ function earth()
     end
     global x_3d
     x_3d = [x, y, h];
-    
-    P = 300*rand(1,n);
-    P2v(P);
+  
     

@@ -23,7 +23,12 @@ global L      %路程总长（斜边）
 global x_L    %采样点             数组
 global x_3d
 
-test_type = 3;
+%% 测试类型
+% 0：随机
+% 1：excel
+% 2：长上长下
+% 3：短上短下，多个
+test_type = 2;
 
 if test_type == 0
     v0 = 0;
@@ -44,7 +49,7 @@ elseif test_type == 1
     %EXCEL表格
     v0 = 1;
     beta0 = rand();
-    earth();
+    earth('Tokyo_f.xlsx');
     beta = beta0-theta;
     miu = 0.0035*ones(1,n);
     vmax = 50;
