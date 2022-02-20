@@ -1,6 +1,7 @@
 %file: nonlcon.m
-function [ce, ceq] = nonlcon(v)
+function [ce, ceq] = nonlcon(v_try)
 %非线性约束条件nonlcon
+%迭代：速率集合v_try
     global W
     global beta
     global alpha
@@ -13,26 +14,31 @@ function [ce, ceq] = nonlcon(v)
     global vw
     global det_L
     global CP
+    global Pm
     global v0
-    V = 1:n;
-    V(1) = (v(1)+v0)/2;
-    for i=2:n
-        V(i)=(v(i)+v(i-1))/2;
-    end
-    ce = 0;
-    ceq = [];
-    for i=1:n
-        WF = M*(g*cos(alpha(i))+V(i).^2/rho(i))*miu(i);
-        WG = M*g*sin(alpha(i));
-        WW = K*(V(i)+vw*cos(beta(i))).^2;
-        
-        t =  det_L(i)/V(i);
-        if i==1
-            ce = ce + max(0,(WF+WG+WW)*det_L(i) + 0.5*M*(v(i).^2) - CP * t);
-        else
-            ce = ce + max((WF+WG+WW)*det_L(i) + 0.5*M*(v(i).^2-v(i-1).^2) - CP * t,0);
-        end
-    end
-    ce = ce - W;
+    %V = 1:n;
+    %V(1) = (v_try(1)+v0)/2;
+    %for i=2:n
+        %V(i)=(v_try(i)+v_try(i-1))/2;
+    %end
     
+    ce = zeros(1,2*n-2);
+    ceq = [v_try(1)-v0];
+    exertion = 0;
+    for i=2:n
+        f = M*(g*cos(alpha(i))+v_try(i).^2/rho(i))*miu(i); %滚动摩擦力
+        f_G = M*g*sin(alpha(i)); %重力分量
+        v_vw = v_try(i) - vw*cos(beta(i)); %纵向逆风相对复苏
+        fw = max(K * v_vw.^2 * det_L(i), 0); %空气阻力
+        
+        F = f + f_G + fw;
+        dEk = 0.5*M*(v_try(i).^2 - v_try(i-1).^2);
+        P = F*v_try(i) + dEk*v_try(i)/det_L(i);
+        
+        exertion = exertion + (Pm-CP) * (P-CP) / W / (Pm-P);
+        exertion = max(0, exertion);
+        
+        ce(2*i-3) = exertion-1;
+        ce(2*i-2) = P-Pm;
+    end
 end
