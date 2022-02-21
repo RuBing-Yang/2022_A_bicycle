@@ -28,7 +28,7 @@ global x_3d
 % 1：excel
 % 2：长上长下
 % 3：短上短下，多个
-test_type = 2;
+test_type = 4;
 
 if test_type == 0
     v0 = 0;
@@ -49,11 +49,11 @@ elseif test_type == 1
     %EXCEL表格
     v0 = 1;
     beta0 = rand();
-    earth('Tokyo_f.xlsx');
+    earth('TokyoMen.xlsx');
     beta = beta0-theta;
     miu = 0.0035*ones(1,n);
-    vmax = 50;
-    vlimit = rand(1,n) * vmax;
+    vmax = 15;
+    vlimit = ones(1,n) * vmax;
     V0 = rand(1,1) * vlimit;
 elseif test_type == 2
     %长上坡长下坡
@@ -72,7 +72,7 @@ elseif test_type == 2
     miu = 0.0035*ones(1,n);
     alpha = [0.025*ones(20,1), -0.025*ones(20,1)];
     beta = zeros(1,n);
-else
+elseif test_type == 3
     %20小上小下
     n = 40;
     x_L = 1:1000:40000;
@@ -97,6 +97,15 @@ else
     rho = 1000*ones(1,n);
     miu = 0.0035*ones(1,n);
     beta = zeros(1,n);
+else 
+     v0 = 1;
+    beta0 = rand();
+    route();
+    beta = beta0-theta;
+    miu = 0.0035*ones(1,n);
+    vmax = 15;
+    vlimit = ones(1,n) * vmax;
+    V0 = rand(1,1) * vlimit;
 end
 
 vw = 0;
