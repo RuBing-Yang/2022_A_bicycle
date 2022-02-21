@@ -55,10 +55,8 @@ function earth(filename)
     end
     
     L = x_L(n);
-    r(1) = 10000;
-    r(2) = 10000;
-    rho(1) = 10000;
-    rho(2) = 10000;
+    r = 10000*ones(n,1);
+    rho = 10000*ones(n,1);
     for i = 3:n
         d_theta = theta(i) - theta(i-1);
         r(i) = abs(det_L(i) / d_theta); %×ªÍäÇúÂÊ°ë¾¶

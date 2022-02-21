@@ -24,12 +24,14 @@ global x_L    %采样点             数组
 global x_3d
 
 global det_T
+global E0
 
 %% 测试类型
 % 0：随机
 % 1：excel
 % 2：长上长下
 % 3：短上短下，多个
+% 4：自行设计道路route
 test_type = 4;
 
 if test_type == 0
@@ -115,6 +117,7 @@ else
     vlimit = ones(1,n) * vmax;
 end
 
+E0 = 0;
 vw = 0;
 M = 80;
 g = 9.81;
