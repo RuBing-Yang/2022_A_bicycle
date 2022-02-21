@@ -30,7 +30,7 @@ global det_T
 % 1：excel
 % 2：长上长下
 % 3：短上短下，多个
-test_type = 1;
+test_type = 4;
 
 if test_type == 0
     v0 = 0;
@@ -51,7 +51,7 @@ elseif test_type == 1
     %EXCEL表格
     v0 = 1;
     beta0 = rand();
-    in_name = 'TokyoMen';
+    in_name = 'UCl_f';
     earth([in_name, '.xlsx']);
     filename = [in_name, '_out.xlsx'];
     beta = beta0-theta;
@@ -103,14 +103,16 @@ elseif test_type == 3
     beta = zeros(1,n);
 else 
     v0 = 1;
-    beta0 = rand();
+    V0 = 1;
     route();
+    vw = 10;
+    beta0 = pi/6;
+    filename = ['wind_', num2str(vw), '_' , num2str(beta0), '.xlsx'];
     beta = beta0-theta;
     miu = 0.0035*ones(1,n);
+    miu_s = 0.02*ones(1,n);
     vmax = 15;
-    vw = 10;
     vlimit = ones(1,n) * vmax;
-    V0 = rand(1,1) * vlimit;
 end
 
 vw = 0;
@@ -121,28 +123,58 @@ W = 12430;
 CP = 435;
 Pm = 1234;
 
-
 global times
 times = 0;
-options=optimoptions(@fmincon,'Algorithm','sqp','MaxFunEvals',100000,'MaxIter',10000,'GradObj', 'on');
 %优化算法：'active-set' 'interior-point' 'sqp'  'trust-region-reflective'
 %'MaxFunEvals',100000 最大优化迭代次数100000
 %'GradObj', 'on',开启梯度函数
-[P,fval] = fmincon('func_P',CP*rand(n,1),[],[],[],[],zeros(1,n),Pm*ones(n,1),'nonlcon_P',options);
 %outcome为最终速度序列，fval为目标函数最小值
 
-P = smooth(P0, 30, 'sgolay', 5);
+vw_set =  [0, 0.5, 1.5, 3, 5, 7, 9, 12, 15, 20, 25, 30, 40];
+beta_set = linspace(0, 2*pi, 12);
+beta_set
+
+rawdata = xlsread('wind.xlsx');
+rawdata
+data_cell = cell(length(vw_set), 7);
+
+for i = 1:length(vw_set)
+    data_cell{i+1,1} = vw_set(i);
+end
+for j = 1:length(beta_set)
+    data_cell{1,j+1} = beta_set(j);
+end
+
+for i = 1:length(vw_set)
+    vw = vw_set(i);
+    for j = 1:length(beta_set)
+        beta0 = beta_set(j);
+        if i+1 <= size(rawdata,1) && j+1 <= size(rawdata,2) &&  ~isnan(rawdata(i+1, j+1)) && rawdata(i+1, j+1) ~= 0
+            data_cell{i+1,j+1} = rawdata(i+1, j+1);
+            continue
+        end
+        options=optimoptions(@fmincon,'Algorithm','sqp','MaxFunEvals',100000,'MaxIter',10000,'GradObj', 'on');
+        [P,fval] = fmincon('func_P',CP*rand(n,1),[],[],[],[],zeros(1,n),Pm*ones(n,1),'nonlcon_P',options);
+        data_cell{i+1,j+1} = fval;
+        data_cell
+        xlswrite('wind.xlsx', data_cell);
+    end
+end
+
+%{
+P = smooth(P, 30, 'sgolay', 5);
 v = P2v(P);
 data_cell = cell(n,7);
 for i = 1:n
-    data_cell(i,:) = {x_3d(i,1), x_3d(i,2), x_3d(i,3), x_L(i), P(i), v(i), det_T(i)}; 
+    %data_cell(i,:) = {x_3d(i,1), x_3d(i,2), x_3d(i,3), x_L(i), P(i), v(i), det_T(i)}; 
 end
 size(data_cell)
 stitle = {'x', 'y', 'h', 'L', 'P', 'v', 'dt'};  % 添加变量名称
 result = [stitle; data_cell]; 
-
 s = xlswrite(filename, result);  
+%}
 
+%{
 figure
 plot(x_L, v, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [36, 169, 225]/255)%画图v-x_L
 xlabel('position(m)');
@@ -158,6 +190,7 @@ ylabel('power(W)');
 title(['Power distribution with Total time ',num2str(sum(det_T)), '(s)']);
 % 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
 set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+%}
 %{
 P0 = P;
 x_L0 = x_L
@@ -224,7 +257,7 @@ legend('Original power profile', 'Power offset', 'Position offset');
 
 
 
-
+%{
 figure
 plot3(x_3d(:,1), x_3d(:,2), x_3d(:,3), 'ok-', 'linewidth', 1.1, 'markerfacecolor', [36, 169, 225]/255)%画图height-xy
 xlabel('x/m');
@@ -233,5 +266,19 @@ zlabel('height/m');
 title('Course cross section');
 
 
+x = smooth(x_3d(:,1), 10, 'sgolay', 5);
+y = smooth(x_3d(:,2), 10, 'sgolay', 5);
+z = smooth(x_3d(:,3), 10, 'sgolay', 5);
+figure
+plot3(x, y, z, 'linewidth', 2, 'color', [182, 194, 154]/255)%画图height-xy
+xlabel('x/m');
+ylabel('y/m');
+zlabel('height/m');
+title('Course 3d model');
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+
 
 disp(sum(det_T))%输出最小时间
+
+%}

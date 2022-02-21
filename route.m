@@ -73,7 +73,7 @@ function [x,y,z] = route()
         x_L(i) = x_L(i-1) + det_L(i);
         theta(i) = - atan(dx/dy); %速度方向
         
-        beta(i) = beta0 - theta(i); %迎风角
+        %beta(i) = beta0 - theta(i); %迎风角
     end
     
     L = x_L(n);

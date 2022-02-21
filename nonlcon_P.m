@@ -21,8 +21,8 @@ function [ce, ceq] = nonlcon_P(P)
         exertion = max(0, exertion);
         ce = [ce, exertion-1];
     end
-    times = times + 1;
-    if mod(times,1000) == 0
-        times
-    end
+%     times = times + 1;
+%     if mod(times,1000) == 0
+%         times
+%     end
 end

@@ -1,5 +1,5 @@
 
-filename = 'TokyoMen_out.xlsx';
+filename = 'TokyoLady_out.xlsx';
 
 rawdata = xlsread(filename);
 x = rawdata(:,1);
