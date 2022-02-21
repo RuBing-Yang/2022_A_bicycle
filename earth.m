@@ -67,5 +67,4 @@ function earth(filename)
     end
     global x_3d
     x_3d = [x, y, h];
-  
     

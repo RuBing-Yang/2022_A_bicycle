@@ -23,12 +23,14 @@ global L      %路程总长（斜边）
 global x_L    %采样点             数组
 global x_3d
 
+global det_T
+
 %% 测试类型
 % 0：随机
 % 1：excel
 % 2：长上长下
 % 3：短上短下，多个
-test_type = 4;
+test_type = 1;
 
 if test_type == 0
     v0 = 0;
@@ -49,7 +51,9 @@ elseif test_type == 1
     %EXCEL表格
     v0 = 1;
     beta0 = rand();
-    earth('TokyoMen.xlsx');
+    in_name = 'TokyoMen';
+    earth([in_name, '.xlsx']);
+    filename = [in_name, '_out.xlsx'];
     beta = beta0-theta;
     miu = 0.0035*ones(1,n);
     vmax = 15;
@@ -98,12 +102,13 @@ elseif test_type == 3
     miu = 0.0035*ones(1,n);
     beta = zeros(1,n);
 else 
-     v0 = 1;
+    v0 = 1;
     beta0 = rand();
     route();
     beta = beta0-theta;
     miu = 0.0035*ones(1,n);
     vmax = 15;
+    vw = 10;
     vlimit = ones(1,n) * vmax;
     V0 = rand(1,1) * vlimit;
 end
@@ -116,42 +121,117 @@ W = 12430;
 CP = 435;
 Pm = 1234;
 
+
+global times
+times = 0;
 options=optimoptions(@fmincon,'Algorithm','sqp','MaxFunEvals',100000,'MaxIter',10000,'GradObj', 'on');
 %优化算法：'active-set' 'interior-point' 'sqp'  'trust-region-reflective'
 %'MaxFunEvals',100000 最大优化迭代次数100000
 %'GradObj', 'on',开启梯度函数
 [P,fval] = fmincon('func_P',CP*rand(n,1),[],[],[],[],zeros(1,n),Pm*ones(n,1),'nonlcon_P',options);
 %outcome为最终速度序列，fval为目标函数最小值
-subplot(2, 2, 1);
+
+P = smooth(P0, 30, 'sgolay', 5);
 v = P2v(P);
-plot(x_L, v)%画图v-x_L
-xlabel('x_L/m');
-ylabel('v/m*s-1');
+data_cell = cell(n,7);
+for i = 1:n
+    data_cell(i,:) = {x_3d(i,1), x_3d(i,2), x_3d(i,3), x_L(i), P(i), v(i), det_T(i)}; 
+end
+size(data_cell)
+stitle = {'x', 'y', 'h', 'L', 'P', 'v', 'dt'};  % 添加变量名称
+result = [stitle; data_cell]; 
+
+s = xlswrite(filename, result);  
+
+figure
+plot(x_L, v, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [36, 169, 225]/255)%画图v-x_L
+xlabel('position(m)');
+ylabel('velocity(m/s)');
 title('Velocity distribution');
-grid on;
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
 
-nonlcon(v)
-subplot(2, 2, 2);
-plot(x_L, P, 'o')%画图P-x_L
-xlabel('x_L/m');
-ylabel('P/W');
+figure
+plot(x_L, P, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [29, 191, 151]/255)%画图P-x_L
+xlabel('position(m)');
+ylabel('power(W)');
+title(['Power distribution with Total time ',num2str(sum(det_T)), '(s)']);
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+%{
+P0 = P;
+x_L0 = x_L
+
+%P = smooth(P0, 5, 'sgolay', 3);
+P = P0 + 40*(rand(n,1) - 0.5); %竖直
+vv0 = v;
+v = P2v(P);
+
+figure
+plot(x_L, vv0, 'linewidth', 4, 'color', [252, 157, 154]/255)%画图P-x_L
+hold on
+plot(x_L, v, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [36, 169, 225]/255)%画图v-x_L
+xlabel('position(m)');
+ylabel('velocity(m/s)');
+title('Velocity distribution after smoothing');
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+
+figure
+plot(x_L, P0, 'linewidth', 4, 'color', [252, 157, 154]/255)%画图P-x_L
+hold on
+plot(x_L, P, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [29, 191, 151]/255)%画图P-x_L
+xlabel('position(m)');
+ylabel('power(W)');
+title(['Power distribution with Total time ',num2str(sum(det_T)), '(s)']);
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+legend('Original power profile', 'Power offset');
+
+
+x_L = x_L + 100*(rand(n,1) - 0.5); %竖直
+%P = smooth(P0, 40, 'sgolay', 5);
+v = P2v(P0);
+figure
+plot(x_L, v, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [36, 169, 225]/255)%画图v-x_L
+xlabel('position(m)');
+ylabel('velocity(m/s)');
+title('Velocity distribution after smoothing');
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+
+figure
+plot(x_L, P0, 'ok-', 'linewidth', 1.1, 'markerfacecolor', [29, 191, 151]/255)%画图P-x_L
+xlabel('position(m)');
+ylabel('power(W)');
+title(['Power distribution with Total time ',num2str(sum(det_T)), '(s)']);
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+
+figure
+plot(x_L0, P0, 'linewidth', 1.1, 'color', [178, 200, 187]/255)%画图P-x_L
+hold on
+plot(x_L0, P, 'linewidth', 1.1, 'color', [229, 131, 8]/255)%画图P-x_L
+hold on
+plot(x_L, P0, 'linewidth', 2, 'color', [220, 87, 18]/255)%画图P-x_L
+xlabel('position(m)');
+ylabel('power(W)');
 title('Power distribution');
-grid on;
-subplot(2, 2, 3);
-
-plot(x_L,x_3d(:,3))%画图height-x
-xlabel('x/m');
-ylabel('height/m');
-title('Course cross section');
-grid on;
+% 坐标轴边框线宽1.1, 坐标轴字体与大小为Times New Roman和16
+set(gca, 'linewidth', 1.1, 'fontsize', 16, 'fontname', 'times')
+legend('Original power profile', 'Power offset', 'Position offset');
+%}
 
 
-subplot(2, 2, 4);
-plot3(x_3d(:,1), x_3d(:,2), x_3d(:,3))%画图height-xy
+
+
+figure
+plot3(x_3d(:,1), x_3d(:,2), x_3d(:,3), 'ok-', 'linewidth', 1.1, 'markerfacecolor', [36, 169, 225]/255)%画图height-xy
 xlabel('x/m');
 ylabel('y/m');
 zlabel('height/m');
 title('Course cross section');
-grid on;
 
-disp(fval)%输出最小时间
+
+
+disp(sum(det_T))%输出最小时间
